@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: rs-quarkus-demo
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: quarkus-demo
+  template:
+    metadata:
+      labels:
+        app: quarkus-demo
+        env: dev
+    spec:
+      containers:
+        - name: quarkus-demo
+          image: quay.io/rhdevelopers/quarkus-demo:v1
