@@ -241,5 +241,64 @@ Filenames in linux are case sensitive.
 
 ### The file system hierarchy
 Everything starts from ```/``` the root of the file system.
+```bash
+tom@tom-ubuntu:~/Projects$ ls /
+bin   cdrom  etc   lib    lib64   lost+found  mnt  proc  run   snap  swapfile  tmp  var
+boot  dev    home  lib32  libx32  media       opt  root  sbin  srv   sys       usr
 
+```
+- The ```bin``` directory keeps executables usable by all users of the system
+- The ```sbin``` is for system directories. These are programs typically only usable for the root user.
+- The usr stands for unix system resources where the binaries are kept e.g. ```ls```
+- Systems commands are kept in ```/usr/sbin```
+- The boot directory is where the kernel is kept
+- ```dev``` is where device files are kept
+- ```etc``` stands for extended text configurations. This is where the configurations are kept such as
+the ssh server
+- ```/home``` directories are for normal users
+- root users home directory is ```/root```
+- ```lib``` and ```lib64``` keep application libraries and shared code
+- ```tmp``` is for temporary space. Files in this directory are kept for 10 days
+- ```var``` stands for variable data for transient and temporary files such as logging
+
+### Vim
+Vim operates in different modes. Command mode is for special commands. Change into insert mode with ```i```.
+Hit escape to go out of insert mode. Extended command mode is ```:```. Write a file with ```:write```.
+```:q``` to quit. ```y``` is to yank text. ```p``` pastes. ```10p``` pastes ten times.
+```dd``` deletes a line. ```10dd``` deletes ten lines. ```o``` puts the cursor on a new line.
+Escape puts us back into command mode. ```ZZ``` closes the file.
+
+### Linux users
+Users on linux can be organized into groups. ```useradd``` adds a user.
+
+```bash
+tom@tom-ubuntu:~/Projects$ sudo useradd john
+[sudo] password for tom: 
+tom@tom-ubuntu:~/Projects$ id john
+uid=1001(john) gid=1001(john) groups=1001(john)
+```
+
+### Linux file permissions
+Read, write, execute. Then we specify user, group and other.
+```bash
+  u   g   o
+-|---|---|---
+```
+For example:
+```bash
+-|---|---|---
+  rwx rwx rwx
+```
+This command shows us permissions on a directory:
+```bash
+tom@tom-ubuntu:~$ ls -ld common
+drwxrwxr-x 2 tom tom 4096 Mar 17 00:02 common
+```
+Here tom is the owner of the above directory.
+
+### Networking
+Show network connections with:
+```bash
+nmcli connection show
+```
 
