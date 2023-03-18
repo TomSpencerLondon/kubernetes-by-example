@@ -326,6 +326,13 @@ snap-core20-1828.mount                         enabled         enabled
 ### Linux containers
 Containers contain application runtime in portable isolated portable units.
 
+### start minikube
+
+```bash
+tom@tom-ubuntu:~/Projects/kubernetes-by-example/deployment-example$ minikube start
+```
+
+
 ### What is Kubernetes?
 - Kubernetes is a portable extensible program for orchestrating containers
 - Kubernetes is hosted by CNCF. It is an open source technology.
@@ -554,4 +561,235 @@ myapp-79f884648d-fw9sw   1/1     Running   0          36m
 rs-quarkus-demo-9c8r6    1/1     Running   0          2s
 rs-quarkus-demo-n26zv    1/1     Running   0          119s
 rs-quarkus-demo-p6lf6    1/1     Running   0          119s
+```
+
+### What is a Deployment?
+A kubernetes deployment is an abstraction that tries to fulfil the requirements of your application.
+A deployment contains a replicaSet and adds history to the replicaSets for rolling back to previous versions.
+This is a deployment yaml file example:
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: myboot
+  name: myboot
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: myboot
+  template:
+    metadata:
+      labels:
+        app: myboot
+    spec:
+      containers:
+        - name: myboot
+          image: quay.io/rhdevelopers/myboot:v1
+          ports:
+            - containerPort: 8080
+```
+Here we are asking for four replicas of the container image. We apply the yml file:
+
+```bash
+tom@tom-ubuntu:~/Projects/kubernetes-by-example/deployment-example$ kubectl apply -f deployment.yml 
+deployment.apps/myboot created
+```
+
+We can check the pods:
+```bash
+tom@tom-ubuntu:~/Projects/kubernetes-by-example/deployment-example$ kubectl get pods
+NAME                      READY   STATUS    RESTARTS   AGE
+myapp-79f884648d-99lbd    1/1     Running   0          16h
+myapp-79f884648d-fw9sw    1/1     Running   0          16h
+myboot-7586d9799d-79tf5   1/1     Running   0          2m5s
+myboot-7586d9799d-85wv2   1/1     Running   0          2m5s
+myboot-7586d9799d-ghgjv   1/1     Running   0          2m5s
+myboot-7586d9799d-vtc76   1/1     Running   0          2m5s
+rs-quarkus-demo-9c8r6     1/1     Running   0          15h
+rs-quarkus-demo-n26zv     1/1     Running   0          15h
+rs-quarkus-demo-p6lf6     1/1     Running   0          15h
+```
+We can change the image and check the pods:
+```bash
+tom@tom-ubuntu:~/Projects/kubernetes-by-example/deployment-example$ kubectl set image deploy/myboot myboot=quay.io/rhdevelopers/quarkus-demo:v1
+deployment.apps/myboot image updated
+tom@tom-ubuntu:~/Projects/kubernetes-by-example/deployment-example$ kubectl get pods
+NAME                      READY   STATUS              RESTARTS   AGE
+myapp-79f884648d-99lbd    1/1     Running             0          16h
+myapp-79f884648d-fw9sw    1/1     Running             0          16h
+myboot-7546df657d-7vhkr   0/1     ContainerCreating   0          1s
+myboot-7546df657d-fbw27   1/1     Running             0          3s
+myboot-7546df657d-gsmqj   0/1     ContainerCreating   0          3s
+myboot-7586d9799d-79tf5   1/1     Terminating         0          3m35s
+myboot-7586d9799d-85wv2   1/1     Terminating         0          3m35s
+myboot-7586d9799d-ghgjv   1/1     Running             0          3m35s
+myboot-7586d9799d-vtc76   1/1     Running             0          3m35s
+rs-quarkus-demo-9c8r6     1/1     Running             0          15h
+rs-quarkus-demo-n26zv     1/1     Running             0          15h
+rs-quarkus-demo-p6lf6     1/1     Running             0          15h
+```
+
+We can now view the history of this deployment:
+```bash
+tom@tom-ubuntu:~/Projects/kubernetes-by-example/deployment-example$ kubectl rollout history deploy/myboot
+deployment.apps/myboot 
+REVISION  CHANGE-CAUSE
+1         <none>
+2         <none>
+```
+This rolls the deployment back:
+```bash
+tom@tom-ubuntu:~/Projects/kubernetes-by-example/deployment-example$ kubectl rollout undo deploy/myboot --to-revision=1
+deployment.apps/myboot rolled back
+```
+
+We can see that we are now running the previous version of the pods:
+```bash
+tom@tom-ubuntu:~/Projects/kubernetes-by-example/deployment-example$ kubectl get pods
+NAME                      READY   STATUS    RESTARTS   AGE
+myapp-79f884648d-99lbd    1/1     Running   0          16h
+myapp-79f884648d-fw9sw    1/1     Running   0          16h
+myboot-7586d9799d-hj255   1/1     Running   0          28s
+myboot-7586d9799d-jpxfn   1/1     Running   0          28s
+myboot-7586d9799d-l8j2b   1/1     Running   0          29s
+myboot-7586d9799d-zfm8w   1/1     Running   0          29s
+rs-quarkus-demo-9c8r6     1/1     Running   0          15h
+rs-quarkus-demo-n26zv     1/1     Running   0          15h
+rs-quarkus-demo-p6lf6     1/1     Running   0          15h
+```
+
+### What is a label?
+The first two or three resources are easy to use names but we need labels later on for key value pairs to attach to resources.
+Once we have labels we can use labels as selectors - to update and delete all deployments with a particular label.
+
+```bash
+tom@tom-ubuntu:~/Projects/kubernetes-by-example/deployment-example$ kubectl get po --show-labels
+NAME                      READY   STATUS    RESTARTS   AGE     LABELS
+myapp-79f884648d-99lbd    1/1     Running   0          16h     app=myapp,pod-template-hash=79f884648d
+myapp-79f884648d-fw9sw    1/1     Running   0          16h     app=myapp,pod-template-hash=79f884648d
+myboot-7586d9799d-hj255   1/1     Running   0          3m20s   app=myboot,pod-template-hash=7586d9799d
+myboot-7586d9799d-jpxfn   1/1     Running   0          3m20s   app=myboot,pod-template-hash=7586d9799d
+myboot-7586d9799d-l8j2b   1/1     Running   0          3m21s   app=myboot,pod-template-hash=7586d9799d
+myboot-7586d9799d-zfm8w   1/1     Running   0          3m21s   app=myboot,pod-template-hash=7586d9799d
+rs-quarkus-demo-9c8r6     1/1     Running   0          15h     app=quarkus-demo,env=dev
+rs-quarkus-demo-n26zv     1/1     Running   0          15h     app=quarkus-demo,env=dev
+rs-quarkus-demo-p6lf6     1/1     Running   0          15h     app=quarkus-demo,env=dev
+
+```
+
+We can then delete by label:
+```bash
+tom@tom-ubuntu:~/Projects/kubernetes-by-example/deployment-example$ kubectl delete pods -l app=myapp
+pod "myapp-79f884648d-99lbd" deleted
+pod "myapp-79f884648d-fw9sw" deleted
+```
+
+Delete deployment:
+```bash
+tom@tom-ubuntu:~/Projects/kubernetes-by-example/deployment-example$ kubectl delete -f deployment.yml
+```
+
+Add label:
+```bash
+tom@tom-ubuntu:~/Projects/kubernetes-by-example/deployment-example$ kubectl get pods --show-labels
+NAME                      READY   STATUS    RESTARTS   AGE   LABELS
+myboot-7586d9799d-jg78j   1/1     Running   0          34s   app=myboot,pod-template-hash=7586d9799d
+myboot-7586d9799d-pc2jf   1/1     Running   0          34s   app=myboot,pod-template-hash=7586d9799d
+myboot-7586d9799d-vh5tl   1/1     Running   0          34s   app=myboot,pod-template-hash=7586d9799d
+myboot-7586d9799d-wsccd   1/1     Running   0          34s   app=myboot,pod-template-hash=7586d9799d
+tom@tom-ubuntu:~/Projects/kubernetes-by-example/deployment-example$ kubectl label po -l app=myboot inservice=ok
+pod/myboot-7586d9799d-jg78j labeled
+pod/myboot-7586d9799d-pc2jf labeled
+pod/myboot-7586d9799d-vh5tl labeled
+pod/myboot-7586d9799d-wsccd labeled
+tom@tom-ubuntu:~/Projects/kubernetes-by-example/deployment-example$ kubectl get pods --show-labels
+NAME                      READY   STATUS    RESTARTS   AGE   LABELS
+myboot-7586d9799d-jg78j   1/1     Running   0          90s   app=myboot,inservice=ok,pod-template-hash=7586d9799d
+myboot-7586d9799d-pc2jf   1/1     Running   0          90s   app=myboot,inservice=ok,pod-template-hash=7586d9799d
+myboot-7586d9799d-vh5tl   1/1     Running   0          90s   app=myboot,inservice=ok,pod-template-hash=7586d9799d
+myboot-7586d9799d-wsccd   1/1     Running   0          90s   app=myboot,inservice=ok,pod-template-hash=7586d9799d
+
+```
+
+Remove label:
+```bash
+kubectl label po -l app=mynode inservice-
+```
+
+### What is a service?
+Kubernetes cluster can be composed of multiple nodes. If can't rely on ip addresses of nodes we use services (like a dns domain name)
+to route requests to the correct pods.
+
+```bash
+tom@tom-ubuntu:~/Projects/kubernetes-by-example/deployment-example$ kubectl get deployments
+NAME     READY   UP-TO-DATE   AVAILABLE   AGE
+myboot   4/4     4            4           9s
+```
+Create a service for the deployment:
+```bash
+apiVersion: v1
+kind: Service
+metadata:
+    name: myboot
+    labels:
+        app: myboot
+spec:
+  ports:
+    - name: http
+      port: 8080
+```
+
+Get logs of pod:
+```bash
+kubectl logs myboot-7586d9799d-gfh8h
+```
+
+### Building images
+Pods contain containers which contain images. Dockerfile example:
+```bash
+FROM openjdk:8u151
+ENV JAVA_APP_JAR boot-demo-1.0.0.jar
+WORKDIR /app/
+COPY target/$JAVA_APP_JAR
+EXPOSE 8080
+CMD java $JAVA_OPTIONS -jar $JAVA_APP_JAR
+```
+
+Build the dockerfile:
+```bash
+docker build -t tomspencerlondon/boot-demo:1 .
+```
+This builds the container image. The docker container image is in internal registry.
+Run the docker image:
+```bash
+docker run -it --rm --name bootdemo tomspencerlondon/boot-demo:v1
+```
+Push the docker image to a repository:
+```bash
+docker push tomspencerlondon/boot-demo:v1
+```
+
+### Resource requests and limits
+Kubernetes provides shared compute environment. This means that the application will share resources like CPU, memory, storage, network
+along with other applications deployed by you or other developers. Other applications from other teams could use different resource. Resource requests
+mean that you schedule your workload in the cluster and present the minimum required for the application. Resource limits
+limit how much CPU your application can use.
+
+This is an example file for creating resource requests:
+```bash
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod
+spec:
+  containers:
+    - name: my-container
+      image: nginx:latest
+      resources:
+        requests:
+          memory: "256Mi"
+          cpu: "500m"
+
 ```
